@@ -1,0 +1,136 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String?
+  email     String   @unique
+  password  String?
+  image     String?
+  role      Role     @default(USER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  citations           Citation[]
+  sessions            Session[]
+  accounts            Account[]
+  passwordResetTokens PasswordResetToken[]
+  toolUsages          ResearchToolUsage[]
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model Citation {
+  id          String        @id @default(cuid())
+  userId      String?
+  user        User?         @relation(fields: [userId], references: [id])
+  isInLibrary Boolean       @default(false)
+  sourceType  SourceType
+  sourceInput String
+  style       CitationStyle
+  output      String
+  journalRank JournalRank?
+  metadata    Json?
+  createdAt   DateTime      @default(now())
+  sessionId   String?
+}
+
+enum SourceType {
+  DOI
+  URL
+  PDF
+  DOCX
+  MANUAL
+  BIBTEX
+}
+
+enum CitationStyle {
+  APA
+  MLA
+  CHICAGO
+  IEEE
+  HARVARD
+  VANCOUVER
+}
+
+enum JournalRank {
+  Q1
+  Q2
+  Q3
+  Q4
+  UNRANKED
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  user         User     @relation(fields: [userId], references: [id])
+  expires      DateTime
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  user              User    @relation(fields: [userId], references: [id])
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  @@unique([provider, providerAccountId])
+}
+
+// Secure token-based password reset.
+// Only the SHA-256 hash of the raw token is persisted — the raw token
+// is sent exclusively to the user's email and never stored.
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique          // SHA-256(rawToken) — never the raw value
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime                  // now() + 1 h at creation time
+  createdAt DateTime @default(now())
+}
+
+model GuestUsage {
+  id          String   @id @default(cuid())
+  fingerprint String   @unique
+  count       Int      @default(0)
+  lastUsedAt  DateTime @default(now())
+}
+
+// Stores tool results that the user explicitly chose to save ("Save to Library").
+// The raw input and AI output are persisted for future reference.
+model ResearchToolUsage {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  toolType  ToolType
+  inputText String   @db.Text
+  output    String   @db.Text
+  metadata  Json?    // optional: tool-specific extras (e.g. targetLang, score, changes[])
+  createdAt DateTime @default(now())
+}
+
+enum ToolType {
+  TRANSLATE
+  PARAPHRASE
+  AI_DETECT
+  GRAMMAR
+  HUMANIZE
+}

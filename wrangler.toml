@@ -1,0 +1,15 @@
+# Cloudflare Workers / Pages configuration for CiteOut
+# Docs: https://developers.cloudflare.com/workers/wrangler/configuration/
+
+name = "citeout"
+compatibility_date = "2025-04-01"
+compatibility_flags = ["nodejs_compat"]
+
+# OpenNext builds into .open-next; Pages serves assets from there
+pages_build_output_dir = ".open-next/assets"
+
+[vars]
+# Non-secret build-time variables can go here.
+# Secrets (DATABASE_URL, NEXTAUTH_SECRET, etc.) must be added via
+# the Cloudflare Dashboard → Settings → Environment Variables.
+NEXT_TELEMETRY_DISABLED = "1"

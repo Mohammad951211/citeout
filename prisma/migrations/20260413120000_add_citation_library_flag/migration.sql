@@ -1,0 +1,2 @@
+ALTER TABLE "Citation"
+ADD COLUMN "isInLibrary" BOOLEAN NOT NULL DEFAULT false;
